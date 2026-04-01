@@ -852,10 +852,11 @@
   document.getElementById('cartOverlay').addEventListener('click', closeCart);
   document.getElementById('cartCloseBtn').addEventListener('click', closeCart);
   document.getElementById('cartOrderBtn').addEventListener('click', function(){
-    alert('Dziękujemy za zamówienie! Skontaktujemy się z Tobą wkrótce.');
-    cart = [];
-    render();
-    closeCart();
+    if(cart.length === 0) return;
+    try { sessionStorage.setItem('bargucio_cart', JSON.stringify(cart)); } catch(e){}
+    document.body.style.transition = 'opacity .4s ease';
+    document.body.style.opacity = '0';
+    setTimeout(function(){ window.location.href = 'order.html'; }, 420);
   });
 
   render();

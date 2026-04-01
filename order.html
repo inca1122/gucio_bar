@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Złóż zamówienie – Bar Gucio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;1,8..60,300&family=PT+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:     #C0392B;
+    --red-dark:#922B21;
+    --cream:   #FBF7F0;
+    --warm:    #FEFCF8;
+    --straw:   #F5EDD8;
+    --tan:     #E8D8BE;
+    --brown:   #7B5E3A;
+    --ink:     #1E1510;
+    --gray:    #7A7060;
+    --gray-lt: #A89880;
+    --border:  #D9C9AE;
+    --green:   #27AE60;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+
+  body {
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'PT Sans',sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    opacity:0;
+    transition:opacity .5s ease;
+  }
+  body.visible { opacity:1; }
+  body.fade-out { opacity:0; transition:opacity .4s ease; }
+
+  /* NAV */
+  nav {
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    padding:0 44px;height:56px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--warm);
+    box-shadow:0 1px 0 var(--border),0 2px 12px rgba(30,21,16,.08);
+  }
+  .nav-logo {
+    font-family:'Merriweather',serif;font-size:19px;font-weight:700;
+    color:var(--ink);text-decoration:none;letter-spacing:-.3px;
+  }
+  .nav-back {
+    display:flex;align-items:center;gap:7px;
+    font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+    color:var(--gray);text-decoration:none;
+    transition:color .2s;
+    cursor:pointer;background:none;border:none;font-family:'PT Sans',sans-serif;
+  }
+  .nav-back:hover { color:var(--red); }
+  .nav-back svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+
+  /* PAGE */
+  .page { padding-top:56px; min-height:100vh; }
+
+  /* HERO STRIP */
+  .order-hero {
+    background:var(--ink);
+    padding:52px 44px 44px;
+    text-align:center;
+  }
+  .order-hero-eye {
+    font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+    color:rgba(255,255,255,.4);margin-bottom:10px;
+  }
+  .order-hero-title {
+    font-family:'Merriweather',serif;font-size:clamp(28px,4vw,40px);
+    font-weight:700;color:#fff;line-height:1.15;
+  }
+  .order-hero-title em { font-style:italic;font-weight:300;color:#FFD580; }
+
+  /* MAIN LAYOUT */
+  .order-wrap {
+    max-width:900px;margin:0 auto;
+    padding:52px 44px 80px;
+    display:grid;
+    grid-template-columns:1fr 380px;
+    gap:40px;
+    align-items:start;
+  }
+
+  /* FORM CARD */
+  .form-card {
+    background:var(--warm);border:1px solid var(--border);
+    border-radius:12px;padding:36px;
+  }
+  .form-section-title {
+    font-family:'Merriweather',serif;font-size:16px;font-weight:700;
+    color:var(--ink);margin-bottom:22px;padding-bottom:14px;
+    border-bottom:2px solid var(--tan);display:flex;align-items:center;gap:10px;
+  }
+  .form-section-title span { font-size:20px; }
+
+  .field { margin-bottom:20px; }
+  .field label {
+    display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--gray-lt);margin-bottom:7px;
+  }
+  .field input {
+    width:100%;padding:12px 14px;
+    background:var(--cream);border:1.5px solid var(--border);
+    border-radius:7px;font-family:'PT Sans',sans-serif;font-size:15px;
+    color:var(--ink);outline:none;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field input:focus {
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(192,57,43,.10);
+  }
+  .field input::placeholder { color:var(--gray-lt); }
+  .field input.error { border-color:#E74C3C; }
+  .field-err {
+    font-size:12px;color:#E74C3C;margin-top:4px;
+    display:none;
+  }
+  .field.has-error .field-err { display:block; }
+  .field.has-error input { border-color:#E74C3C; }
+
+  .submit-btn {
+    width:100%;padding:16px;margin-top:8px;
+    background:var(--red);color:#fff;border:none;
+    border-radius:8px;font-family:'PT Sans',sans-serif;
+    font-weight:700;font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:background .2s,transform .15s,box-shadow .2s;
+    box-shadow:0 4px 18px rgba(192,57,43,.30);
+  }
+  .submit-btn:hover { background:var(--red-dark);transform:translateY(-1px);box-shadow:0 7px 24px rgba(192,57,43,.40); }
+  .submit-btn:active { transform:translateY(0); }
+  .submit-btn svg { width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+
+  /* ORDER SUMMARY CARD */
+  .summary-card {
+    background:var(--warm);border:1px solid var(--border);
+    border-radius:12px;overflow:hidden;position:sticky;top:76px;
+  }
+  .summary-head {
+    background:var(--straw);padding:20px 22px;
+    border-bottom:1px solid var(--border);
+  }
+  .summary-head-title {
+    font-family:'Merriweather',serif;font-size:15px;font-weight:700;color:var(--ink);
+  }
+  .summary-head-cnt { font-size:13px;color:var(--gray);margin-top:2px; }
+
+  .summary-items { padding:8px 22px; max-height:340px; overflow-y:auto; }
+  .summary-item {
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 0;border-bottom:1px solid var(--tan);
+  }
+  .summary-item:last-child { border-bottom:none; }
+  .summary-item-left { display:flex;align-items:center;gap:10px;min-width:0; }
+  .summary-item-qty {
+    width:24px;height:24px;border-radius:50%;background:var(--red);
+    color:#fff;font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .summary-item-name {
+    font-family:'Merriweather',serif;font-size:13px;font-weight:700;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .summary-item-price {
+    font-family:'Merriweather',serif;font-size:13px;font-weight:700;
+    color:var(--red);white-space:nowrap;flex-shrink:0;
+  }
+  .summary-empty {
+    padding:28px 22px;text-align:center;
+    font-family:'Source Serif 4',serif;font-size:15px;font-style:italic;color:var(--gray);
+  }
+
+  .summary-total {
+    padding:16px 22px;border-top:2px solid var(--tan);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .summary-total-lbl {
+    font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);
+  }
+  .summary-total-val {
+    font-family:'Merriweather',serif;font-size:22px;font-weight:700;color:var(--ink);
+  }
+
+  /* SUCCESS SCREEN */
+  .success-screen {
+    display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:60px 24px;
+    min-height:60vh;
+  }
+  .success-screen.visible { display:flex; }
+
+  .success-icon {
+    width:80px;height:80px;border-radius:50%;
+    background:rgba(39,174,96,.12);border:2px solid rgba(39,174,96,.3);
+    display:flex;align-items:center;justify-content:center;margin-bottom:28px;
+    animation:successPop .6s cubic-bezier(.22,1,.36,1) forwards;
+    opacity:0;
+  }
+  @keyframes successPop {
+    from{opacity:0;transform:scale(.5)}
+    to{opacity:1;transform:scale(1)}
+  }
+  .success-icon svg { width:38px;height:38px;stroke:var(--green);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+
+  .success-title {
+    font-family:'Merriweather',serif;font-size:clamp(22px,3.5vw,32px);
+    font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:14px;
+    opacity:0;animation:fadeUp .6s ease .25s forwards;
+  }
+  .success-sub {
+    font-family:'Source Serif 4',serif;font-size:18px;font-style:italic;
+    color:var(--gray);line-height:1.5;max-width:440px;margin-bottom:36px;
+    opacity:0;animation:fadeUp .6s ease .4s forwards;
+  }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(16px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  .back-btn {
+    display:inline-flex;align-items:center;gap:9px;
+    background:var(--ink);color:#fff;
+    padding:14px 30px;border-radius:8px;
+    font-family:'PT Sans',sans-serif;font-weight:700;font-size:15px;
+    text-decoration:none;cursor:pointer;border:none;
+    transition:background .2s,transform .15s;
+    opacity:0;animation:fadeUp .6s ease .55s forwards;
+    box-shadow:0 4px 16px rgba(30,21,16,.18);
+  }
+  .back-btn:hover { background:#2C1A0E;transform:translateY(-1px); }
+  .back-btn svg { width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+
+  /* RESPONSIVE */
+  @media(max-width:760px){
+    .order-wrap{grid-template-columns:1fr;padding:36px 20px 60px;}
+    .order-hero{padding:44px 20px 36px;}
+    nav{padding:0 20px;}
+    .summary-card{position:static;}
+    .form-card{padding:24px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo" id="navLogo">Bar Gucio</a>
+  <button class="nav-back" id="navBackBtn">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    Wróć do menu
+  </button>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="order-hero">
+    <div class="order-hero-eye">Zamówienie online</div>
+    <h1 class="order-hero-title">Dostawa pod <em>Twój adres</em></h1>
+  </div>
+
+  <!-- FORM + SUMMARY -->
+  <div class="order-wrap" id="orderWrap">
+
+    <!-- FORM -->
+    <div class="form-card">
+      <div class="form-section-title"><span>📋</span> Dane do zamówienia</div>
+
+      <form id="orderForm" novalidate>
+        <div class="field" id="field-name">
+          <label for="inp-name">Imię i nazwisko</label>
+          <input type="text" id="inp-name" placeholder="np. Jan Kowalski" autocomplete="name">
+          <div class="field-err">Pole jest wymagane</div>
+        </div>
+
+        <div class="field" id="field-address">
+          <label for="inp-address">Adres dostawy</label>
+          <input type="text" id="inp-address" placeholder="ul. Przykładowa 12/3, 40-000 Katowice" autocomplete="street-address">
+          <div class="field-err">Pole jest wymagane</div>
+        </div>
+
+        <div class="field" id="field-phone">
+          <label for="inp-phone">Numer telefonu</label>
+          <input type="tel" id="inp-phone" placeholder="+48 123 456 789" autocomplete="tel">
+          <div class="field-err">Podaj prawidłowy numer telefonu</div>
+        </div>
+
+        <div class="field" id="field-email">
+          <label for="inp-email">Adres e-mail</label>
+          <input type="email" id="inp-email" placeholder="jan@example.com" autocomplete="email">
+          <div class="field-err">Podaj prawidłowy adres e-mail</div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Zamów teraz
+        </button>
+      </form>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="summary-card">
+      <div class="summary-head">
+        <div class="summary-head-title">Twoje zamówienie</div>
+        <div class="summary-head-cnt" id="summaryCnt"></div>
+      </div>
+      <div class="summary-items" id="summaryItems">
+        <div class="summary-empty">Koszyk jest pusty</div>
+      </div>
+      <div class="summary-total">
+        <span class="summary-total-lbl">Razem</span>
+        <span class="summary-total-val" id="summaryTotal">0,00 zł</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUCCESS SCREEN -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-title">Zamówienie złożone!</div>
+    <div class="success-sub">Dziękujemy za zamówienie.<br>Wkrótce się z Tobą skontaktujemy.</div>
+    <button class="back-btn" id="backToSiteBtn">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Wróć na stronę
+    </button>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+(function(){
+
+  // ── FADE IN on load ──
+  requestAnimationFrame(function(){
+    document.body.classList.add('visible');
+  });
+
+  // ── SMOOTH BACK NAVIGATION ──
+  function goBack(){
+    document.body.classList.add('fade-out');
+    setTimeout(function(){ window.location.href='index.html'; }, 420);
+  }
+  document.getElementById('navBackBtn').addEventListener('click', goBack);
+  document.getElementById('navLogo').addEventListener('click', function(e){
+    e.preventDefault(); goBack();
+  });
+
+  // ── LOAD CART FROM sessionStorage ──
+  var cart = [];
+  try {
+    var saved = sessionStorage.getItem('bargucio_cart');
+    if(saved) cart = JSON.parse(saved);
+  } catch(e){}
+
+  // ── RENDER SUMMARY ──
+  function renderSummary(){
+    var items = document.getElementById('summaryItems');
+    var cnt   = document.getElementById('summaryCnt');
+    var total = document.getElementById('summaryTotal');
+
+    if(cart.length === 0){
+      items.innerHTML = '<div class="summary-empty">Koszyk jest pusty</div>';
+      cnt.textContent = '';
+      total.textContent = '0,00 zł';
+      return;
+    }
+
+    var totalQty   = 0;
+    var totalPrice = 0;
+    var rows = '';
+
+    cart.forEach(function(item){
+      totalQty   += item.qty;
+      totalPrice += item.priceNum * item.qty;
+      var lineTotal = (item.priceNum * item.qty).toFixed(2).replace('.',',');
+      rows += '<div class="summary-item">' +
+        '<div class="summary-item-left">' +
+          '<div class="summary-item-qty">' + item.qty + '</div>' +
+          '<div class="summary-item-name">' + item.name + '</div>' +
+        '</div>' +
+        '<div class="summary-item-price">' + lineTotal + ' zł</div>' +
+      '</div>';
+    });
+
+    items.innerHTML = rows;
+    var units = totalQty===1 ? 'pozycja' : totalQty<5 ? 'pozycje' : 'pozycji';
+    cnt.textContent = totalQty + ' ' + units;
+    total.textContent = totalPrice.toFixed(2).replace('.',',') + ' zł';
+  }
+
+  renderSummary();
+
+  // ── FORM VALIDATION ──
+  function validatePhone(val){
+    return /^[\d\s\+\-\(\)]{7,}$/.test(val.trim());
+  }
+  function validateEmail(val){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  }
+  function setError(fieldId, hasError){
+    var el = document.getElementById('field-' + fieldId);
+    if(hasError) el.classList.add('has-error');
+    else el.classList.remove('has-error');
+  }
+
+  // ── SUBMIT ──
+  document.getElementById('orderForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    var name    = document.getElementById('inp-name').value;
+    var address = document.getElementById('inp-address').value;
+    var phone   = document.getElementById('inp-phone').value;
+    var email   = document.getElementById('inp-email').value;
+
+    var valid = true;
+
+    if(!name.trim()){    setError('name', true);    valid=false; } else setError('name', false);
+    if(!address.trim()){ setError('address', true); valid=false; } else setError('address', false);
+    if(!validatePhone(phone)){ setError('phone', true); valid=false; } else setError('phone', false);
+    if(!validateEmail(email)){ setError('email', true); valid=false; } else setError('email', false);
+
+    if(!valid) return;
+
+    // Hide form, show success
+    var wrap = document.getElementById('orderWrap');
+    wrap.style.transition = 'opacity .4s ease';
+    wrap.style.opacity = '0';
+
+    setTimeout(function(){
+      wrap.style.display = 'none';
+      sessionStorage.removeItem('bargucio_cart');
+      var success = document.getElementById('successScreen');
+      success.classList.add('visible');
+    }, 420);
+  });
+
+  // ── BACK TO SITE from success ──
+  document.getElementById('backToSiteBtn').addEventListener('click', goBack);
+
+})();
+</script>
+</body>
+</html>
