@@ -399,9 +399,32 @@
 
   renderSummary();
 
+  // ── POLISH PHONE AUTO-FORMAT ──
+  var phoneInput = document.getElementById('inp-phone');
+  phoneInput.addEventListener('input', function(){
+    var val = this.value;
+    var hasPlus48 = val.startsWith('+48');
+    var digits = val.replace(/\D/g, '');
+
+    // Strip country code 48 if present (making 11 digits)
+    if(digits.startsWith('48') && digits.length > 9){
+      digits = digits.substring(2);
+    }
+    digits = digits.substring(0, 9);
+
+    var fmt = '';
+    if(digits.length > 0) fmt += digits.substring(0, Math.min(3, digits.length));
+    if(digits.length > 3) fmt += ' ' + digits.substring(3, Math.min(6, digits.length));
+    if(digits.length > 6) fmt += ' ' + digits.substring(6, 9);
+
+    this.value = hasPlus48 ? '+48 ' + fmt : fmt;
+  });
+
   // ── FORM VALIDATION ──
   function validatePhone(val){
-    return /^[\d\s\+\-\(\)]{7,}$/.test(val.trim());
+    var digits = val.replace(/\D/g, '');
+    if(digits.startsWith('48') && digits.length === 11) digits = digits.substring(2);
+    return digits.length === 9;
   }
   function validateEmail(val){
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
@@ -412,35 +435,90 @@
     else el.classList.remove('has-error');
   }
 
+  // ── BUILD ORDER TEXT FOR EMAIL ──
+  function buildOrderText(){
+    if(cart.length === 0) return 'Brak pozycji w koszyku';
+    var lines = cart.map(function(item){
+      return item.qty + 'x ' + item.name + ' — ' + (item.priceNum * item.qty).toFixed(2) + ' zl';
+    });
+    var total = cart.reduce(function(s, i){ return s + i.priceNum * i.qty; }, 0);
+    lines.push('----------------------------');
+    lines.push('RAZEM: ' + total.toFixed(2) + ' zl');
+    return lines.join('\n');
+  }
+
+  // ── SEND EMAIL via Web3Forms ──
+  function w3send(data){
+    return fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(Object.assign({
+        access_key: '635ce404-39ad-4a31-8842-997fc08e22c1',
+        botcheck: ''
+      }, data))
+    }).then(function(r){ return r.json(); });
+  }
+
   // ── SUBMIT ──
   document.getElementById('orderForm').addEventListener('submit', function(e){
     e.preventDefault();
 
-    var name    = document.getElementById('inp-name').value;
-    var address = document.getElementById('inp-address').value;
-    var phone   = document.getElementById('inp-phone').value;
-    var email   = document.getElementById('inp-email').value;
+    var name    = document.getElementById('inp-name').value.trim();
+    var address = document.getElementById('inp-address').value.trim();
+    var phone   = document.getElementById('inp-phone').value.trim();
+    var email   = document.getElementById('inp-email').value.trim();
 
     var valid = true;
-
-    if(!name.trim()){    setError('name', true);    valid=false; } else setError('name', false);
-    if(!address.trim()){ setError('address', true); valid=false; } else setError('address', false);
-    if(!validatePhone(phone)){ setError('phone', true); valid=false; } else setError('phone', false);
-    if(!validateEmail(email)){ setError('email', true); valid=false; } else setError('email', false);
-
+    if(!name)                { setError('name',    true);  valid=false; } else setError('name',    false);
+    if(!address)             { setError('address', true);  valid=false; } else setError('address', false);
+    if(!validatePhone(phone)){ setError('phone',   true);  valid=false; } else setError('phone',   false);
+    if(!validateEmail(email)){ setError('email',   true);  valid=false; } else setError('email',   false);
     if(!valid) return;
 
-    // Hide form, show success
-    var wrap = document.getElementById('orderWrap');
-    wrap.style.transition = 'opacity .4s ease';
-    wrap.style.opacity = '0';
+    var btn = this.querySelector('.submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Wysyłam...';
 
-    setTimeout(function(){
-      wrap.style.display = 'none';
-      sessionStorage.removeItem('bargucio_cart');
-      var success = document.getElementById('successScreen');
-      success.classList.add('visible');
-    }, 420);
+    // 1️⃣ IMMEDIATE — owner notification to incaplatform@yandex.by
+    w3send({
+      subject:          'Nowe zamowienie – Bar Gucio',
+      from_name:        'Bar Gucio System',
+      'Imie i nazwisko': name,
+      'Telefon':         phone,
+      'Adres dostawy':   address,
+      'E-mail klienta':  email,
+      'Zamowienie':      buildOrderText()
+    }).then(function(res){
+      if(!res.success){
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Zamów teraz';
+        alert('Wystąpił błąd. Spróbuj ponownie lub zadzwoń do nas.');
+        return;
+      }
+
+      // Show success screen
+      var wrap = document.getElementById('orderWrap');
+      wrap.style.transition = 'opacity .4s ease';
+      wrap.style.opacity = '0';
+      setTimeout(function(){
+        wrap.style.display = 'none';
+        sessionStorage.removeItem('bargucio_cart');
+        document.getElementById('successScreen').classList.add('visible');
+      }, 420);
+
+      // 2️⃣ AFTER 3 MINUTES — customer confirmation email
+      var savedName  = name;
+      var savedEmail = email;
+      setTimeout(function(){
+        w3send({
+          subject:   'Potwierdzenie zamowienia – Bar Gucio',
+          from_name: 'Bar Gucio',
+          name:      savedName,
+          email:     savedEmail,
+          message:   'Dziekujemy za zamowienie! Jest w trakcie przygotowania. Dostarczymy go w ciagu 1 godziny. Smacznego!\n\nZespol Bar Gucio'
+        });
+      }, 3 * 60 * 1000);
+    });
   });
 
   // ── BACK TO SITE from success ──
