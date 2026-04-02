@@ -6,6 +6,8 @@
 <title>Złóż zamówienie – Bar Gucio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;1,8..60,300&family=PT+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('6FBONUSyzhC5FVxNK');</script>
 <style>
   :root {
     --red:     #C0392B;
@@ -447,18 +449,6 @@
     return lines.join('\n');
   }
 
-  // ── SEND EMAIL via Web3Forms ──
-  function w3send(data){
-    return fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(Object.assign({
-        access_key: '635ce404-39ad-4a31-8842-997fc08e22c1',
-        botcheck: ''
-      }, data))
-    }).then(function(r){ return r.json(); });
-  }
-
   // ── SUBMIT ──
   document.getElementById('orderForm').addEventListener('submit', function(e){
     e.preventDefault();
@@ -479,24 +469,19 @@
     btn.disabled = true;
     btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Wysyłam...';
 
-    // 1️⃣ IMMEDIATE — owner notification to incaplatform@yandex.by
-    w3send({
-      subject:          'Nowe zamowienie – Bar Gucio',
-      from_name:        'Bar Gucio System',
-      'Imie i nazwisko': name,
-      'Telefon':         phone,
-      'Adres dostawy':   address,
-      'E-mail klienta':  email,
-      'Zamowienie':      buildOrderText()
-    }).then(function(res){
-      if(!res.success){
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Zamów teraz';
-        alert('Wystąpił błąd. Spróbuj ponownie lub zadzwoń do nas.');
-        return;
-      }
+    var savedName  = name;
+    var savedEmail = email;
 
-      // Show success screen
+    // 1️⃣ НЕМЕДЛЕННО — письмо владельцу
+    emailjs.send('service_xj0e8vd', 'template_7tu390p', {
+      client_name:    name,
+      client_phone:   phone,
+      client_address: address,
+      client_email:   email,
+      order:          buildOrderText()
+    }).then(function(){
+
+      // Показываем экран успеха
       var wrap = document.getElementById('orderWrap');
       wrap.style.transition = 'opacity .4s ease';
       wrap.style.opacity = '0';
@@ -506,18 +491,18 @@
         document.getElementById('successScreen').classList.add('visible');
       }, 420);
 
-      // 2️⃣ AFTER 3 MINUTES — customer confirmation email
-      var savedName  = name;
-      var savedEmail = email;
+      // 2️⃣ ЧЕРЕЗ 3 СЕКУНДЫ — письмо клиенту
       setTimeout(function(){
-        w3send({
-          subject:   'Potwierdzenie zamowienia – Bar Gucio',
-          from_name: 'Bar Gucio',
-          name:      savedName,
-          email:     savedEmail,
-          message:   'Dziekujemy za zamowienie! Jest w trakcie przygotowania. Dostarczymy go w ciagu 1 godziny. Smacznego!\n\nZespol Bar Gucio'
+        emailjs.send('service_xj0e8vd', 'template_x2gvr16', {
+          client_name:  savedName,
+          client_email: savedEmail
         });
       }, 3000);
+
+    }, function(){
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Zamów teraz';
+      alert('Wystąpił błąd. Spróbuj ponownie lub zadzwoń do nas.');
     });
   });
 
