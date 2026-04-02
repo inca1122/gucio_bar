@@ -494,8 +494,8 @@
       // 2️⃣ ЧЕРЕЗ 3 СЕКУНДЫ — письмо клиенту
       setTimeout(function(){
         emailjs.send('service_xj0e8vd', 'template_x2gvr16', {
-          client_name:  savedName,
-          client_email: savedEmail
+          client_name: savedName,
+          to_email:    savedEmail
         });
       }, 3000);
 
