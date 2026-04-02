@@ -437,16 +437,48 @@
     else el.classList.remove('has-error');
   }
 
-  // ── BUILD ORDER TEXT FOR EMAIL ──
-  function buildOrderText(){
-    if(cart.length === 0) return 'Brak pozycji w koszyku';
-    var lines = cart.map(function(item){
-      return item.qty + 'x ' + item.name + ' — ' + (item.priceNum * item.qty).toFixed(2) + ' zl';
+  // ── BUILD ORDER HTML FOR OWNER EMAIL ──
+  function buildOrderHtml(){
+    if(cart.length === 0) return '<em style="color:#A89880;">Brak pozycji w koszyku</em>';
+    var rows = cart.map(function(item){
+      var lineTotal = (item.priceNum * item.qty).toFixed(2);
+      return '<tr>' +
+        '<td style="padding:7px 0;color:#F5EDD8;font-family:monospace;font-size:13px;">' + item.qty + 'x &nbsp;' + item.name + '</td>' +
+        '<td style="padding:7px 0;color:#FFD580;text-align:right;white-space:nowrap;font-family:monospace;font-size:13px;font-weight:bold;">' + lineTotal + ' zl</td>' +
+      '</tr>';
     });
     var total = cart.reduce(function(s, i){ return s + i.priceNum * i.qty; }, 0);
-    lines.push('----------------------------');
-    lines.push('RAZEM: ' + total.toFixed(2) + ' zl');
-    return lines.join('\n');
+    return '<table style="width:100%;border-collapse:collapse;">' +
+      rows.join('') +
+      '<tr><td colspan="2" style="padding:4px 0;"><hr style="border:none;border-top:1px solid rgba(255,255,255,0.2);margin:4px 0;"></td></tr>' +
+      '<tr>' +
+        '<td style="color:#fff;font-weight:bold;font-family:monospace;font-size:14px;">RAZEM</td>' +
+        '<td style="color:#FFD580;font-weight:bold;text-align:right;font-family:monospace;font-size:14px;">' + total.toFixed(2) + ' zl</td>' +
+      '</tr>' +
+    '</table>';
+  }
+
+  // ── BUILD RECEIPT HTML FOR CLIENT EMAIL ──
+  function buildReceiptHtml(){
+    if(cart.length === 0) return '';
+    var rows = cart.map(function(item){
+      var lineTotal = (item.priceNum * item.qty).toFixed(2);
+      return '<tr>' +
+        '<td style="padding:10px 16px;border-bottom:1px solid #E8D8BE;">' +
+          '<div style="font-size:14px;color:#1E1510;font-weight:bold;">' + item.name + '</div>' +
+          '<div style="font-size:12px;color:#A89880;margin-top:2px;">Ilość: ' + item.qty + '</div>' +
+        '</td>' +
+        '<td style="padding:10px 16px;border-bottom:1px solid #E8D8BE;text-align:right;white-space:nowrap;color:#C0392B;font-weight:bold;font-size:14px;">' + lineTotal + ' zł</td>' +
+      '</tr>';
+    });
+    var total = cart.reduce(function(s, i){ return s + i.priceNum * i.qty; }, 0);
+    return '<table style="width:100%;border-collapse:collapse;">' +
+      rows.join('') +
+      '<tr>' +
+        '<td style="padding:12px 16px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#7A7060;">Razem do zapłaty</td>' +
+        '<td style="padding:12px 16px;text-align:right;font-size:20px;font-weight:bold;color:#1E1510;">' + total.toFixed(2) + ' zł</td>' +
+      '</tr>' +
+    '</table>';
   }
 
   // ── SUBMIT ──
@@ -472,13 +504,16 @@
     var savedName  = name;
     var savedEmail = email;
 
+    var orderHtml   = buildOrderHtml();
+    var receiptHtml = buildReceiptHtml();
+
     // 1️⃣ НЕМЕДЛЕННО — письмо владельцу
     emailjs.send('service_xj0e8vd', 'template_7tu390p', {
       client_name:    name,
       client_phone:   phone,
       client_address: address,
       client_email:   email,
-      order:          buildOrderText()
+      order:          orderHtml
     }).then(function(){
 
       // Показываем экран успеха
@@ -495,7 +530,8 @@
       setTimeout(function(){
         emailjs.send('service_xj0e8vd', 'template_x2gvr16', {
           client_name: savedName,
-          to_email:    savedEmail
+          to_email:    savedEmail,
+          receipt:     receiptHtml
         });
       }, 3000);
 
